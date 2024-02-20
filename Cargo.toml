@@ -1,0 +1,12 @@
+[package]
+name = "loop"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0/MIT"
+authors = ["Ivan Ukhov <ivan.ukhov@gmail.com>"]
+description = "The package allows for processing iterators in parallel."
+documentation = "https://docs.rs/loop"
+homepage = "https://github.com/stainless-steel/loop"
+repository = "https://github.com/stainless-steel/loop"
+categories = ["algorithms"]
+keywords = ["parallel"]
