@@ -1,6 +1,6 @@
 [package]
 name = "loop"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0/MIT"
 authors = ["Ivan Ukhov <ivan.ukhov@gmail.com>"]
@@ -10,3 +10,14 @@ homepage = "https://github.com/stainless-steel/loop"
 repository = "https://github.com/stainless-steel/loop"
 categories = ["algorithms"]
 keywords = ["parallel"]
+
+[features]
+asynchronous = ["futures", "tokio", "tokio-stream"]
+
+[dependencies]
+futures = { version = "0.3", default-features = false, optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "sync"], optional = true }
+tokio-stream = { version = "0.1", default-features = false, optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros"] }
