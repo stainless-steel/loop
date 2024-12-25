@@ -2,22 +2,22 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
 /// Process an iterator in parallel.
-pub fn parallelize<Items, Map, Context, Item, Result>(
-    items: Items,
+pub fn parallelize<Inputs, Map, Context, Input, Output>(
+    inputs: Inputs,
     map: Map,
     context: Context,
     workers: Option<usize>,
-) -> impl Iterator<Item = Result>
+) -> impl Iterator<Item = Output>
 where
-    Items: std::iter::Iterator<Item = Item> + Send + 'static,
-    Map: Fn(Item, Context) -> Result + Copy + Send + 'static,
+    Inputs: std::iter::Iterator<Item = Input> + Send + 'static,
+    Map: Fn(Input, Context) -> Output + Copy + Send + 'static,
     Context: Clone + Send + 'static,
-    Item: Send + 'static,
-    Result: Send + 'static,
+    Input: Send + 'static,
+    Output: Send + 'static,
 {
     let workers = crate::support::workers(workers);
-    let (forward_sender, forward_receiver) = mpsc::sync_channel::<Item>(workers);
-    let (backward_sender, backward_receiver) = mpsc::sync_channel::<Result>(workers);
+    let (forward_sender, forward_receiver) = mpsc::sync_channel::<Input>(workers);
+    let (backward_sender, backward_receiver) = mpsc::sync_channel::<Output>(workers);
     let forward_receiver = Arc::new(Mutex::new(forward_receiver));
     let mut _handlers = Vec::with_capacity(workers + 1);
     for _ in 0..workers {
@@ -25,16 +25,16 @@ where
         let backward_sender = backward_sender.clone();
         let context = context.clone();
         _handlers.push(std::thread::spawn(move || {
-            while let Ok(Ok(item)) = forward_receiver.lock().map(|receiver| receiver.recv()) {
-                if backward_sender.send(map(item, context.clone())).is_err() {
+            while let Ok(Ok(input)) = forward_receiver.lock().map(|receiver| receiver.recv()) {
+                if backward_sender.send(map(input, context.clone())).is_err() {
                     break;
                 }
             }
         }));
     }
     _handlers.push(std::thread::spawn(move || {
-        for item in items {
-            if forward_sender.send(item).is_err() {
+        for input in inputs {
+            if forward_sender.send(input).is_err() {
                 break;
             }
         }
@@ -51,7 +51,7 @@ mod tests {
         assert_eq!(values, &[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
     }
 
-    fn map(item: i32, context: i64) -> usize {
-        item as usize * context as usize
+    fn map(left: i32, right: i64) -> usize {
+        left as usize * right as usize
     }
 }
