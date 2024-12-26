@@ -1,45 +1,44 @@
-use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 
 /// Process an iterator in parallel.
-pub fn parallelize<Inputs, Map, Context, Input, Output>(
-    inputs: Inputs,
+pub fn parallelize<Items, Map, Context, Item, Output>(
+    items: Items,
     map: Map,
     context: Context,
     workers: Option<usize>,
 ) -> impl Iterator<Item = Output>
 where
-    Inputs: std::iter::Iterator<Item = Input> + Send + 'static,
-    Map: Fn(Input, Context) -> Output + Copy + Send + 'static,
+    Items: Iterator<Item = Item> + Send + 'static,
+    Map: Fn(Item, Context) -> Output + Copy + Send + 'static,
     Context: Clone + Send + 'static,
-    Input: Send + 'static,
+    Item: Send + 'static,
     Output: Send + 'static,
 {
     let workers = crate::support::workers(workers);
-    let (forward_sender, forward_receiver) = mpsc::sync_channel::<Input>(workers);
-    let (backward_sender, backward_receiver) = mpsc::sync_channel::<Output>(workers);
-    let forward_receiver = Arc::new(Mutex::new(forward_receiver));
+    let (item_sender, item_receiver) = mpsc::sync_channel::<Item>(workers);
+    let (output_sender, output_receiver) = mpsc::sync_channel::<Output>(workers);
+    let item_receiver = Arc::new(Mutex::new(item_receiver));
     let mut _handlers = Vec::with_capacity(workers + 1);
     for _ in 0..workers {
-        let forward_receiver = forward_receiver.clone();
-        let backward_sender = backward_sender.clone();
+        let item_receiver = item_receiver.clone();
+        let output_sender = output_sender.clone();
         let context = context.clone();
         _handlers.push(std::thread::spawn(move || {
-            while let Ok(Ok(input)) = forward_receiver.lock().map(|receiver| receiver.recv()) {
-                if backward_sender.send(map(input, context.clone())).is_err() {
+            while let Ok(Ok(item)) = item_receiver.lock().map(|receiver| receiver.recv()) {
+                if output_sender.send(map(item, context.clone())).is_err() {
                     break;
                 }
             }
         }));
     }
     _handlers.push(std::thread::spawn(move || {
-        for input in inputs {
-            if forward_sender.send(input).is_err() {
+        for item in items {
+            if item_sender.send(item).is_err() {
                 break;
             }
         }
     }));
-    backward_receiver.into_iter()
+    output_receiver.into_iter()
 }
 
 #[cfg(test)]

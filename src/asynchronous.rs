@@ -1,37 +1,36 @@
 use std::sync::Arc;
 
-use tokio::sync::mpsc;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::ReceiverStream;
 
 /// Process an iterator in parallel.
-pub fn parallelize<Inputs, Map, Context, Input, Future, Output>(
-    inputs: Inputs,
+pub fn parallelize<Items, Map, Context, Item, Future, Output>(
+    items: Items,
     map: Map,
     context: Context,
     workers: Option<usize>,
 ) -> impl futures::stream::Stream<Item = Output>
 where
-    Inputs: std::iter::Iterator<Item = Input> + Send + 'static,
-    Map: Fn(Input, Context) -> Future + Copy + Send + 'static,
+    Items: Iterator<Item = Item> + Send + 'static,
+    Map: Fn(Item, Context) -> Future + Copy + Send + 'static,
     Context: Clone + Send + 'static,
-    Input: Copy + Send + 'static,
+    Item: Copy + Send + 'static,
     Future: std::future::Future<Output = Output> + Send,
     Output: Send + 'static,
 {
     let workers = crate::support::workers(workers);
-    let (forward_sender, forward_receiver) = mpsc::channel::<Input>(workers);
-    let (backward_sender, backward_receiver) = mpsc::channel::<Output>(workers);
-    let forward_receiver = Arc::new(Mutex::new(forward_receiver));
+    let (item_sender, item_receiver) = mpsc::channel::<Item>(workers);
+    let (output_sender, output_receiver) = mpsc::channel::<Output>(workers);
+    let item_receiver = Arc::new(Mutex::new(item_receiver));
     let mut _handlers = Vec::with_capacity(workers + 1);
     for _ in 0..workers {
-        let forward_receiver = forward_receiver.clone();
-        let backward_sender = backward_sender.clone();
+        let item_receiver = item_receiver.clone();
+        let output_sender = output_sender.clone();
         let context = context.clone();
         _handlers.push(tokio::task::spawn(async move {
-            while let Some(input) = forward_receiver.lock().await.recv().await {
-                if backward_sender
-                    .send(map(input, context.clone()).await)
+            while let Some(item) = item_receiver.lock().await.recv().await {
+                if output_sender
+                    .send(map(item, context.clone()).await)
                     .await
                     .is_err()
                 {
@@ -41,13 +40,13 @@ where
         }));
     }
     _handlers.push(tokio::task::spawn(async move {
-        for input in inputs {
-            if forward_sender.send(input).await.is_err() {
+        for item in items {
+            if item_sender.send(item).await.is_err() {
                 break;
             }
         }
     }));
-    ReceiverStream::new(backward_receiver)
+    ReceiverStream::new(output_receiver)
 }
 
 #[cfg(test)]
