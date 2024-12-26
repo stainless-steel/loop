@@ -8,7 +8,7 @@ pub fn parallelize<Items, Map, Context, Item, Output>(
     workers: Option<usize>,
 ) -> impl Iterator<Item = Output>
 where
-    Items: Iterator<Item = Item> + Send + 'static,
+    Items: IntoIterator<Item = Item> + Send + 'static,
     Map: Fn(Item, Context) -> Output + Copy + Send + 'static,
     Context: Clone + Send + 'static,
     Item: Send + 'static,

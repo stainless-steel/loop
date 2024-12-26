@@ -11,7 +11,8 @@ pub fn parallelize<Items, Map, Context, Item, Future, Output>(
     workers: Option<usize>,
 ) -> impl futures::stream::Stream<Item = Output>
 where
-    Items: Iterator<Item = Item> + Send + 'static,
+    Items: IntoIterator<Item = Item> + Send + 'static,
+    <Items as IntoIterator>::IntoIter: Send,
     Map: Fn(Item, Context) -> Future + Copy + Send + 'static,
     Context: Clone + Send + 'static,
     Item: Copy + Send + 'static,
