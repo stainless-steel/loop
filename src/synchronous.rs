@@ -16,11 +16,10 @@ where
     let (item_sender, item_receiver) = mpsc::sync_channel::<Item>(workers);
     let (output_sender, output_receiver) = mpsc::sync_channel::<Output>(workers);
     let item_receiver = Arc::new(Mutex::new(item_receiver));
-    let mut _handlers = Vec::with_capacity(workers + 1);
     for _ in 0..workers {
         let item_receiver = item_receiver.clone();
         let output_sender = output_sender.clone();
-        _handlers.push(std::thread::spawn(move || {
+        std::mem::drop(std::thread::spawn(move || {
             while let Ok(Ok(item)) = item_receiver.lock().map(|receiver| receiver.recv()) {
                 if output_sender.send(map(item)).is_err() {
                     break;
@@ -28,7 +27,7 @@ where
             }
         }));
     }
-    _handlers.push(std::thread::spawn(move || {
+    std::mem::drop(std::thread::spawn(move || {
         for item in items {
             if item_sender.send(item).is_err() {
                 break;

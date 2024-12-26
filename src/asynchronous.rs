@@ -21,11 +21,10 @@ where
     let (item_sender, item_receiver) = mpsc::channel::<Item>(workers);
     let (output_sender, output_receiver) = mpsc::channel::<Output>(workers);
     let item_receiver = Arc::new(Mutex::new(item_receiver));
-    let mut _handlers = Vec::with_capacity(workers + 1);
     for _ in 0..workers {
         let item_receiver = item_receiver.clone();
         let output_sender = output_sender.clone();
-        _handlers.push(tokio::task::spawn(async move {
+        std::mem::drop(tokio::task::spawn(async move {
             while let Some(item) = item_receiver.lock().await.recv().await {
                 if output_sender.send(map(item).await).await.is_err() {
                     break;
@@ -33,7 +32,7 @@ where
             }
         }));
     }
-    _handlers.push(tokio::task::spawn(async move {
+    std::mem::drop(tokio::task::spawn(async move {
         for item in items {
             if item_sender.send(item).await.is_err() {
                 break;
