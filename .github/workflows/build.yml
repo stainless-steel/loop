@@ -15,9 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup toolchain install stable --profile=minimal --component clippy --component rustfmt
-      - run: cargo clippy -- -D warnings
-      - run: cargo clippy --features asynchronous -- -D warnings
-      - run: cargo fmt --all -- --check
+      - run: make check
 
   test:
     strategy:
@@ -27,5 +25,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup toolchain install stable --profile=minimal
-      - run: cargo test
-      - run: cargo test --features asynchronous
+      - run: make test

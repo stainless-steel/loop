@@ -4,18 +4,16 @@ use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::ReceiverStream;
 
 /// Process an iterator in parallel.
-pub fn parallelize<Items, Map, Context, Item, Future, Output>(
+pub fn parallelize<Items, Item, Map, Future, Output>(
     items: Items,
     map: Map,
-    context: Context,
     workers: Option<usize>,
 ) -> impl futures::stream::Stream<Item = Output>
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
     <Items as IntoIterator>::IntoIter: Send,
-    Map: Fn(Item, Context) -> Future + Copy + Send + 'static,
-    Context: Clone + Send + 'static,
     Item: Copy + Send + 'static,
+    Map: Fn(Item) -> Future + Copy + Send + 'static,
     Future: std::future::Future<Output = Output> + Send,
     Output: Send + 'static,
 {
@@ -27,14 +25,9 @@ where
     for _ in 0..workers {
         let item_receiver = item_receiver.clone();
         let output_sender = output_sender.clone();
-        let context = context.clone();
         _handlers.push(tokio::task::spawn(async move {
             while let Some(item) = item_receiver.lock().await.recv().await {
-                if output_sender
-                    .send(map(item, context.clone()).await)
-                    .await
-                    .is_err()
-                {
+                if output_sender.send(map(item).await).await.is_err() {
                     break;
                 }
             }
@@ -56,14 +49,14 @@ mod tests {
 
     #[tokio::test]
     async fn parallelize() {
-        let mut values = super::parallelize(0..10, map, 2, None)
+        let mut values = super::parallelize(0..10, double, None)
             .collect::<Vec<_>>()
             .await;
         values.sort();
         assert_eq!(values, &[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
     }
 
-    async fn map(item: i32, right: i64) -> usize {
-        item as usize * right as usize
+    async fn double(value: usize) -> usize {
+        2 * value
     }
 }

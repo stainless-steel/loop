@@ -1,17 +1,15 @@
 use std::sync::{mpsc, Arc, Mutex};
 
 /// Process an iterator in parallel.
-pub fn parallelize<Items, Map, Context, Item, Output>(
+pub fn parallelize<Items, Item, Map, Output>(
     items: Items,
     map: Map,
-    context: Context,
     workers: Option<usize>,
 ) -> impl Iterator<Item = Output>
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
-    Map: Fn(Item, Context) -> Output + Copy + Send + 'static,
-    Context: Clone + Send + 'static,
     Item: Send + 'static,
+    Map: Fn(Item) -> Output + Copy + Send + 'static,
     Output: Send + 'static,
 {
     let workers = crate::support::workers(workers);
@@ -22,10 +20,9 @@ where
     for _ in 0..workers {
         let item_receiver = item_receiver.clone();
         let output_sender = output_sender.clone();
-        let context = context.clone();
         _handlers.push(std::thread::spawn(move || {
             while let Ok(Ok(item)) = item_receiver.lock().map(|receiver| receiver.recv()) {
-                if output_sender.send(map(item, context.clone())).is_err() {
+                if output_sender.send(map(item)).is_err() {
                     break;
                 }
             }
@@ -45,12 +42,12 @@ where
 mod tests {
     #[test]
     fn parallelize() {
-        let mut values = super::parallelize(0..10, map, 2, None).collect::<Vec<_>>();
+        let mut values = super::parallelize(0..10, double, None).collect::<Vec<_>>();
         values.sort();
         assert_eq!(values, &[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
     }
 
-    fn map(left: i32, right: i64) -> usize {
-        left as usize * right as usize
+    fn double(value: usize) -> usize {
+        2 * value
     }
 }

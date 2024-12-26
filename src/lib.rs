@@ -5,8 +5,8 @@
 //! ```
 //! # #[cfg(not(feature = "asynchronous"))]
 //! fn main() {
-//!     let multiply = |left, right| left * right;
-//!     let _ = r#loop::parallelize(0..10, multiply, 2, None).collect::<Vec<_>>();
+//!     let multiply = |value| 2 * value;
+//!     let _ = r#loop::parallelize(0..10, multiply, None).collect::<Vec<_>>();
 //! }
 //! # #[cfg(feature = "asynchronous")]
 //! # fn main() {}
@@ -18,8 +18,8 @@
 //! async fn main() {
 //!     use futures::stream::StreamExt;
 //!
-//!     let multiply = |left, right| async move { left * right };
-//!     let _ = r#loop::parallelize(0..10, multiply, 2, None).collect::<Vec<_>>().await;
+//!     let multiply = |value| async move { 2 * value };
+//!     let _ = r#loop::parallelize(0..10, multiply, None).collect::<Vec<_>>().await;
 //! }
 //! # #[cfg(not(feature = "asynchronous"))]
 //! # fn main() {}

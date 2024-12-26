@@ -5,15 +5,15 @@ The package allows for processing iterators in parallel.
 # Example
 
 ```rust
-let multiply = |left, right| left * right;
-let _ = r#loop::parallelize(0..10, multiply, 2, None).collect::<Vec<_>>();
+let double = |value| 2 * value;
+let _ = r#loop::parallelize(0..10, double, None).collect::<Vec<_>>();
 ```
 
 ```rust
 use futures::stream::StreamExt;
 
-let multiply = |left, right| async move { left * right };
-let _ = r#loop::parallelize(0..10, multiply, 2, None).collect::<Vec<_>>().await;
+let double = |value| async move { 2 * value };
+let _ = r#loop::parallelize(0..10, double, None).collect::<Vec<_>>().await;
 ```
 
 ## Contribution
