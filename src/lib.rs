@@ -39,4 +39,5 @@ mod implementation;
 
 mod support;
 
+/// Process an iterator in parallel.
 pub use implementation::parallelize;

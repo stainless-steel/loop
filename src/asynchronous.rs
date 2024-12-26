@@ -3,7 +3,6 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::ReceiverStream;
 
-/// Process an iterator in parallel.
 pub fn parallelize<Items, Item, Map, Future, Output>(
     items: Items,
     mut map: Map,

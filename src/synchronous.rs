@@ -1,6 +1,5 @@
 use std::sync::{mpsc, Arc, Mutex};
 
-/// Process an iterator in parallel.
 pub fn parallelize<Items, Item, Map, Output>(
     items: Items,
     mut map: Map,
