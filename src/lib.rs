@@ -1,16 +1,20 @@
 //! Processing iterators in parallel.
 //!
-//! # Example
+//! # Examples
+//!
+//! Synchronously:
 //!
 //! ```
 //! # #[cfg(not(feature = "asynchronous"))]
 //! fn main() {
-//!     let multiply = |value| 2 * value;
-//!     let _ = r#loop::parallelize(0..10, multiply, None).collect::<Vec<_>>();
+//!     let double = |value| 2 * value;
+//!     let _ = r#loop::parallelize(0..10, double).collect::<Vec<_>>();
 //! }
 //! # #[cfg(feature = "asynchronous")]
 //! # fn main() {}
 //!```
+//!
+//! Asynchronously:
 //!
 //!```
 //! # #[cfg(feature = "asynchronous")]
@@ -18,8 +22,8 @@
 //! async fn main() {
 //!     use futures::stream::StreamExt;
 //!
-//!     let multiply = |value| async move { 2 * value };
-//!     let _ = r#loop::parallelize(0..10, multiply, None).collect::<Vec<_>>().await;
+//!     let double = |value| async move { 2 * value };
+//!     let _ = r#loop::parallelize(0..10, double).collect::<Vec<_>>().await;
 //! }
 //! # #[cfg(not(feature = "asynchronous"))]
 //! # fn main() {}

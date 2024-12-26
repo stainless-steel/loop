@@ -7,7 +7,6 @@ use tokio_stream::wrappers::ReceiverStream;
 pub fn parallelize<Items, Item, Map, Future, Output>(
     items: Items,
     mut map: Map,
-    workers: Option<usize>,
 ) -> impl futures::stream::Stream<Item = Output>
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
@@ -17,7 +16,7 @@ where
     Future: std::future::Future<Output = Output> + Send,
     Output: Send + 'static,
 {
-    let workers = crate::support::workers(workers);
+    let workers = crate::support::workers();
     let (item_sender, item_receiver) = mpsc::channel::<Item>(workers);
     let (output_sender, output_receiver) = mpsc::channel::<Output>(workers);
     let item_receiver = Arc::new(Mutex::new(item_receiver));
@@ -48,9 +47,7 @@ mod tests {
 
     #[tokio::test]
     async fn parallelize() {
-        let mut values = super::parallelize(0..10, double, None)
-            .collect::<Vec<_>>()
-            .await;
+        let mut values = super::parallelize(0..10, double).collect::<Vec<_>>().await;
         values.sort();
         assert_eq!(values, &[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
     }

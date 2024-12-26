@@ -2,18 +2,22 @@
 
 The package allows for processing iterators in parallel.
 
-# Example
+# Examples
+
+Synchronously:
 
 ```rust
 let double = |value| 2 * value;
 let _ = r#loop::parallelize(0..10, double, None).collect::<Vec<_>>();
 ```
 
+Asynchronously:
+
 ```rust
 use futures::stream::StreamExt;
 
 let double = |value| async move { 2 * value };
-let _ = r#loop::parallelize(0..10, double, None).collect::<Vec<_>>().await;
+let _ = r#loop::parallelize(0..10, double).collect::<Vec<_>>().await;
 ```
 
 ## Contribution
