@@ -6,14 +6,14 @@ use tokio_stream::wrappers::ReceiverStream;
 /// Process an iterator in parallel.
 pub fn parallelize<Items, Item, Map, Future, Output>(
     items: Items,
-    map: Map,
+    mut map: Map,
     workers: Option<usize>,
 ) -> impl futures::stream::Stream<Item = Output>
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
     <Items as IntoIterator>::IntoIter: Send,
     Item: Copy + Send + 'static,
-    Map: Fn(Item) -> Future + Copy + Send + 'static,
+    Map: FnMut(Item) -> Future + Copy + Send + 'static,
     Future: std::future::Future<Output = Output> + Send,
     Output: Send + 'static,
 {

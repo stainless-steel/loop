@@ -3,13 +3,13 @@ use std::sync::{mpsc, Arc, Mutex};
 /// Process an iterator in parallel.
 pub fn parallelize<Items, Item, Map, Output>(
     items: Items,
-    map: Map,
+    mut map: Map,
     workers: Option<usize>,
 ) -> impl Iterator<Item = Output>
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
     Item: Send + 'static,
-    Map: Fn(Item) -> Output + Copy + Send + 'static,
+    Map: FnMut(Item) -> Output + Copy + Send + 'static,
     Output: Send + 'static,
 {
     let workers = crate::support::workers(workers);
