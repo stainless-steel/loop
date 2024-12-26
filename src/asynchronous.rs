@@ -10,7 +10,7 @@ pub fn parallelize<Items, Item, Map, Future, Output>(
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
     <Items as IntoIterator>::IntoIter: Send,
-    Item: Copy + Send + 'static,
+    Item: Send + 'static,
     Map: FnMut(Item) -> Future + Copy + Send + 'static,
     Future: std::future::Future<Output = Output> + Send,
     Output: Send + 'static,
