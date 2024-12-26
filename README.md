@@ -2,7 +2,7 @@
 
 The package allows for processing iterators in parallel.
 
-# Examples
+## Examples
 
 Synchronously:
 
