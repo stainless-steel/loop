@@ -5,13 +5,12 @@
 //! Synchronously:
 //!
 //! ```
-//! # #[cfg(not(feature = "asynchronous"))]
 //! fn main() {
+//!     use r#loop::parallelize;
+//!
 //!     let double = |value| 2 * value;
-//!     let _ = r#loop::parallelize(0..10, double).collect::<Vec<_>>();
+//!     let _ = parallelize(0..10, double).collect::<Vec<_>>();
 //! }
-//! # #[cfg(feature = "asynchronous")]
-//! # fn main() {}
 //!```
 //!
 //! Asynchronously:
@@ -21,23 +20,19 @@
 //! #[tokio::main]
 //! async fn main() {
 //!     use futures::stream::StreamExt;
+//!     use r#loop::asynchronous::parallelize;
 //!
 //!     let double = |value| async move { 2 * value };
-//!     let _ = r#loop::parallelize(0..10, double).collect::<Vec<_>>().await;
+//!     let _ = parallelize(0..10, double).collect::<Vec<_>>().await;
 //! }
 //! # #[cfg(not(feature = "asynchronous"))]
 //! # fn main() {}
 //! ```
 
 #[cfg(feature = "asynchronous")]
-#[path = "asynchronous.rs"]
-mod implementation;
-
-#[cfg(not(feature = "asynchronous"))]
-#[path = "synchronous.rs"]
-mod implementation;
+pub mod asynchronous;
+pub mod synchronous;
 
 mod support;
 
-/// Process an iterator in parallel.
-pub use implementation::parallelize;
+pub use synchronous::parallelize;
