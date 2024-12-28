@@ -27,7 +27,10 @@ where
         let item_receiver = item_receiver.clone();
         let output_sender = output_sender.clone();
         std::mem::drop(tokio::task::spawn(async move {
-            while let Some(item) = item_receiver.lock().await.recv().await {
+            while let Some(item) = {
+                let mut receiver = item_receiver.lock().await;
+                receiver.recv().await
+            } {
                 if output_sender.send(map(item).await).await.is_err() {
                     break;
                 }
