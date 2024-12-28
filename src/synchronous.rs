@@ -6,6 +6,7 @@ use std::sync::{mpsc, Arc, Mutex};
 pub fn parallelize<Items, Item, Map, Output>(
     items: Items,
     mut map: Map,
+    workers: Option<usize>,
 ) -> impl Iterator<Item = Output>
 where
     Items: IntoIterator<Item = Item> + Send + 'static,
@@ -13,7 +14,7 @@ where
     Map: FnMut(Item) -> Output + Copy + Send + 'static,
     Output: Send + 'static,
 {
-    let workers = crate::support::workers();
+    let workers = crate::support::workers(workers);
     let (item_sender, item_receiver) = mpsc::sync_channel::<Item>(workers);
     let (output_sender, output_receiver) = mpsc::sync_channel::<Output>(workers);
     let item_receiver = Arc::new(Mutex::new(item_receiver));
@@ -42,7 +43,7 @@ where
 mod tests {
     #[test]
     fn parallelize() {
-        let mut values = super::parallelize(0..10, double).collect::<Vec<_>>();
+        let mut values = super::parallelize(0..10, double, None).collect::<Vec<_>>();
         values.sort();
         assert_eq!(values, &[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
     }

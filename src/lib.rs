@@ -9,7 +9,7 @@
 //!     use r#loop::parallelize;
 //!
 //!     let double = |value| 2 * value;
-//!     let _ = parallelize(0..10, double).collect::<Vec<_>>();
+//!     let _ = parallelize(0..10, double, None).collect::<Vec<_>>();
 //! }
 //!```
 //!
@@ -23,7 +23,7 @@
 //!     use r#loop::asynchronous::parallelize;
 //!
 //!     let double = |value| async move { 2 * value };
-//!     let _ = parallelize(0..10, double).collect::<Vec<_>>().await;
+//!     let _ = parallelize(0..10, double, None).collect::<Vec<_>>().await;
 //! }
 //! # #[cfg(not(feature = "asynchronous"))]
 //! # fn main() {}
